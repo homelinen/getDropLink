@@ -7,8 +7,8 @@ require 'yaml'
 require 'dropbox_sdk'
 
 # Get your app key and secret from the Dropbox developer website
-APP_KEY = 'YOUR_APP_KEY'
-APP_SECRET = 'YOUR_APP_SECRET'
+APP_KEY = '9vzni4g9r2irkz7'
+APP_SECRET = 'xeibmp6c72f6cj2'
 
 # ACCESS_TYPE should be ':dropbox' or ':app_folder' as configured for your app
 ACCESS_TYPE = :dropbox
@@ -27,7 +27,7 @@ else
     # make the user sign in and authorize this token
     puts "AUTHORIZING", authorize_url
     puts "Please visit this website and press the 'Allow' button, then hit 'Enter' here."
-    gets
+    $stdin.gets
 
     session.get_access_token
 
@@ -36,6 +36,38 @@ else
     f.close
 end
 
+config_file = 'config.yaml'
+if File.exists? config_file 
+    f = File.open(config_file, 'r')
+
+    config = YAML.load(f.read)
+
+    home_dir = config[:home_dir]
+else
+
+    home_dir = ""
+
+    until Dir.exists? home_dir
+        puts 'Please enter your Dropbox home folder:'
+        home_dir = $stdin.gets.chomp
+    end
+
+    f = File.open('config.yaml', 'w')
+    f.puts({ :home_dir => home_dir }.to_yaml)
+    f.close
+end
+
+home_dir << '/' unless home_dir.end_with? '/'
+
 client = DropboxClient.new(session, ACCESS_TYPE)
 
-puts client.shares('Public/image.png')['url']
+# Get file arguments
+raise "Incorrect number of arguments" unless ARGV.size == 1
+in_file = ARGV[0]
+
+# Replace home_dir of path with blank
+in_file = in_file.sub(home_dir, '')
+
+public_link = client.shares(in_file)['url']
+
+puts "Public link: #{public_link}"
