@@ -62,12 +62,21 @@ home_dir << '/' unless home_dir.end_with? '/'
 client = DropboxClient.new(session, ACCESS_TYPE)
 
 # Get file arguments
-raise "Incorrect number of arguments" unless ARGV.size == 1
+unless ARGV.size == 1
+    puts "Incorrect number of arguments" 
+    puts "Expected:\nshare ~/path/to/file"
+    exit 2
+end
+
 in_file = ARGV[0]
 
 # Replace home_dir of path with blank
 in_file = in_file.sub(home_dir, '')
 
-public_link = client.shares(in_file)['url']
-
+begin
+    public_link = client.shares(in_file)['url']
+rescue DropboxError
+    puts "File not found"
+    exit(1)
+end
 puts "Public link: #{public_link}"
